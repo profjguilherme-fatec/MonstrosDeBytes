@@ -24,10 +24,10 @@ public class PrimeiroRobo extends Robot
 		// Robot main loop
 		while(true) {
 			// Replace the next 4 lines with any behavior you would like
-			ahead(10);
-			back(10);
-			turnLeft(100);
-			turnRight(100);
+			ahead(1000);
+			back(10000);
+			turnLeft(10000);
+			turnRight(100000);
 			
 						
 		}
