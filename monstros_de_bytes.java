@@ -6,6 +6,7 @@ import java.awt.Color;
 
 /**
  * PrimeiroRobo - a robot by (your name here)
+ * Push para teste de webhook
  */
 public class PrimeiroRobo extends Robot
 {
@@ -18,13 +19,13 @@ public class PrimeiroRobo extends Robot
 		// After trying out your robot, try uncommenting the import at the top,
 		// and the next line:
 
-		setColors(Color.green,Color.green,Color.green); // body,gun,radar
+		setColors(Color.green,Color.green,Color.blue); // body,gun,radar
 
 		// Robot main loop
 		while(true) {
 			// Replace the next 4 lines with any behavior you would like
-			ahead(500);
-			back(100);
+			ahead(200);
+			back(10);
 			turnLeft(45);
 			turnRight(180);
 			
@@ -37,7 +38,7 @@ public class PrimeiroRobo extends Robot
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
 		// Replace the next line with any behavior you would like
-		fire(1);
+		fire(2);
 	}
 
 	/**
