@@ -27,7 +27,7 @@ public class PrimeiroRobo extends Robot
 			ahead(1);
 			back(1);
 			turnLeft(1);
-			turnRight(100000);
+			turnRight(1);
 			
 						
 		}
