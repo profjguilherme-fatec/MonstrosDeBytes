@@ -26,7 +26,7 @@ public class PrimeiroRobo extends Robot
 			// Replace the next 4 lines with any behavior you would like
 			ahead(1);
 			back(1);
-			turnLeft(10000);
+			turnLeft(1);
 			turnRight(1);
 			
 						
