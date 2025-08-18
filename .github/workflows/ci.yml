@@ -11,42 +11,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Baixar seu código do repositório
+    # 1. Baixa o código fonte do seu repositório GitHub
     - name: Checkout do código
       uses: actions/checkout@v4
 
-    # 2. Preparar o ambiente Java
+    # 2. Prepara o ambiente Java 11 (altere a versão se necessário)
     - name: Instalar Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '11'
 
-    # 3. Baixar robocode.jar
-    - name: Baixar robocode.jar
-      run: wget https://github.com/robocode-dev/robocode/releases/download/v1.9.5.4/robocode-1.9.5.4.jar -O robocode.jar
+    # 3. Baixa o instalador do Robocode (setup.jar da release oficial)
+    - name: Baixar instalador Robocode
+      run: wget https://github.com/robocode-dev/robocode/releases/download/v1.9.5.4/robocode-1.9.5.4-setup.jar -O robocode-installer.jar
 
-    # 4. Compilar o arquivo Java usando robocode.jar no classpath
-    - name: Compilar PrimeiroRobo.java com Robocode
+    # 4. Extrai somente o arquivo robocode.jar do instalador para a raiz do projeto
+    - name: Extrair robocode.jar do instalador
+      run: unzip -j robocode-installer.jar 'libs/robocode.jar' -d .
+
+    # 5. Compila o seu robô, passando o robocode.jar no classpath
+    - name: Compilar PrimeiroRobo.java com dependência robocode.jar
       run: javac -cp robocode.jar PrimeiroRobo.java
 
-    # 5. Baixar Checkstyle (Qualidade do código)
+    # 6. Baixa o Checkstyle para análise de qualidade do código
     - name: Baixar Checkstyle
       run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
+    # 7. Baixa o arquivo de configuração Google Style para o Checkstyle
     - name: Baixar regras Google Style
       run: wget https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/google_checks.xml -O google_checks.xml
 
-    - name: Rodar Checkstyle (Qualidade)
+    # 8. Executa o Checkstyle para garantir qualidade e padronização
+    - name: Rodar Checkstyle
       run: java -jar checkstyle.jar -c google_checks.xml PrimeiroRobo.java
 
-    # 6. SpotBugs para segurança
+    # 9. Baixa e extrai SpotBugs para análise de possíveis bugs ou falhas (segurança)
     - name: Baixar SpotBugs
       run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
 
     - name: Extrair SpotBugs
       run: tar -xzf spotbugs.tgz
 
+    # 10. Compila classe para análise estática do SpotBugs e executa ferramenta
     - name: Rodar SpotBugs
       run: |
         mkdir -p out
