@@ -1,8 +1,5 @@
-#Corrigido nome do arquivo .ylm para .yml
-# Nome do workflow que será exibido no GitHub
-name: CI - Teste, Qualidade e Segurança
+name: CI - Teste, Qualidade e Segurança (Robocode)
 
-# Quando rodar o workflow? Em push e pull request
 on:
   push:
     branches: [ main ]
@@ -14,22 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Pegar código do repositório
+    # 1. Baixar seu código do repositório
     - name: Checkout do código
       uses: actions/checkout@v4
-      
-    # Step 2: Preparar ambiente Java
+
+    # 2. Preparar o ambiente Java
     - name: Instalar Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '11'  # Versão pode ser alterada conforme necessidade
+        java-version: '11'
 
-    # Step 3: Compilar o arquivo Java (ajuste o nome do arquivo se precisar)
-    - name: Compilar PrimeiroRobo.java
-      run: javac PrimeiroRobo.java
+    # 3. Baixar robocode.jar
+    - name: Baixar robocode.jar
+      run: wget https://github.com/robocode-dev/robocode/releases/download/v1.9.5.4/robocode-1.9.5.4.jar -O robocode.jar
 
-    # Step 4: Verificar qualidade com Checkstyle (Linter)
+    # 4. Compilar o arquivo Java usando robocode.jar no classpath
+    - name: Compilar PrimeiroRobo.java com Robocode
+      run: javac -cp robocode.jar PrimeiroRobo.java
+
+    # 5. Baixar Checkstyle (Qualidade do código)
     - name: Baixar Checkstyle
       run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
@@ -39,15 +40,15 @@ jobs:
     - name: Rodar Checkstyle (Qualidade)
       run: java -jar checkstyle.jar -c google_checks.xml PrimeiroRobo.java
 
-    # Step 5: Analisar segurança com SpotBugs
+    # 6. SpotBugs para segurança
     - name: Baixar SpotBugs
       run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
 
     - name: Extrair SpotBugs
       run: tar -xzf spotbugs.tgz
 
-    - name: Rodar SpotBugs (Segurança)
+    - name: Rodar SpotBugs
       run: |
         mkdir -p out
-        javac -d out PrimeiroRobo.java
+        javac -cp robocode.jar -d out PrimeiroRobo.java
         spotbugs-4.8.3/bin/spotbugs -textui out/
