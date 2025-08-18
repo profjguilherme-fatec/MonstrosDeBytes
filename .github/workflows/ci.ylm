@@ -1,0 +1,52 @@
+# Nome do workflow que será exibido no GitHub
+name: CI - Teste, Qualidade e Segurança
+
+# Quando rodar o workflow? Em push e pull request
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  qualidade-seguranca:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Pegar código do repositório
+    - name: Checkout do código
+      uses: actions/checkout@v4
+      
+    # Step 2: Preparar ambiente Java
+    - name: Instalar Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'  # Versão pode ser alterada conforme necessidade
+
+    # Step 3: Compilar o arquivo Java (ajuste o nome do arquivo se precisar)
+    - name: Compilar PrimeiroRobo.java
+      run: javac PrimeiroRobo.java
+
+    # Step 4: Verificar qualidade com Checkstyle (Linter)
+    - name: Baixar Checkstyle
+      run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
+
+    - name: Baixar regras Google Style
+      run: wget https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/google_checks.xml -O google_checks.xml
+
+    - name: Rodar Checkstyle (Qualidade)
+      run: java -jar checkstyle.jar -c google_checks.xml PrimeiroRobo.java
+
+    # Step 5: Analisar segurança com SpotBugs
+    - name: Baixar SpotBugs
+      run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
+
+    - name: Extrair SpotBugs
+      run: tar -xzf spotbugs.tgz
+
+    - name: Rodar SpotBugs (Segurança)
+      run: |
+        mkdir -p out
+        javac -d out PrimeiroRobo.java
+        spotbugs-4.8.3/bin/spotbugs -textui out/
