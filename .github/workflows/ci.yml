@@ -1,5 +1,6 @@
 name: CI - Teste, Qualidade e Segurança (Robocode Local)
-#teste de comunicação
+#teste de comunicação em grupp
+#teste 1
 
 on:
   push:
