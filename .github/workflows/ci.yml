@@ -1,12 +1,15 @@
 name: CI - Teste, Qualidade e Segurança (Robocode Local)
+
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
 jobs:
   qualidade-seguranca:
     runs-on: ubuntu-latest
+
     steps:
       # 1. Baixa o código do repositório
       - name: Checkout do código
@@ -19,7 +22,7 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      # 3. Compila o robô usando o robocode.jar local da pasta libs/
+      # 3. Compila o robô usando o robocode.jar local (que deve estar em libs/)
       - name: Compilar PrimeiroRobo.java com dependência robocode.jar
         run: javac -cp libs/robocode.jar PrimeiroRobo.java
 
@@ -38,7 +41,11 @@ jobs:
       - name: Extrair SpotBugs
         run: tar -xzf spotbugs.tgz
 
-      # 7. Compila de novo (agora com destino em ./out/) e executa o SpotBugs
+      # 7. Corrige permissões do executável SpotBugs
+      - name: Dar permissão de execução ao spotbugs
+        run: chmod +x spotbugs-4.8.3/bin/spotbugs
+
+      # 8. Compila de novo (agora com destino em ./out/) e executa o SpotBugs
       - name: Rodar SpotBugs
         run: |
           mkdir -p out
