@@ -51,3 +51,19 @@ jobs:
           mkdir -p out
           javac -cp libs/robocode.jar -d out PrimeiroRobo.java
           spotbugs-4.8.3/bin/spotbugs -textui out/
+
+# Mensagem Final de Sucesso
+
+  - name: Rodar SpotBugs
+    run: |
+      mkdir -p out
+      javac -cp libs/robocode.jar -d out PrimeiroRobo.java
+      spotbugs-4.8.3/bin/spotbugs -textui out/
+
+  - name: Exibir mensagem final de sucesso
+    if: ${{ success() }}
+    run: |
+      echo '🎉 CI executado com sucesso!'
+      echo 'Robô compilado, verificado com Checkstyle e analisado com SpotBugs.'
+      echo 'Arquivo usado: PrimeiroRobo.java'
+      echo 'Parabéns, pipeline completa e aprovada! 🚦'
