@@ -1,5 +1,6 @@
 package aprendizado;
 import robocode.*;
+import robocode.util.Utils;
 import java.awt.Color;
 
 // API help : https://robocode.sourceforge.io/docs/robocode/robocode/Robot.html
@@ -8,93 +9,133 @@ import java.awt.Color;
  * PrimeiroRobo - a robot by (your name here)
  * Push para teste de webhook
  */
-public class PrimeiroRobo extends Robot
+public class PrimeiroRobo extends AdvancedRobot
 {
+	// Estado do inimigo
+	private double lastEnemyEnergy = 100.0;
+	private int moveDirection = 1; // 1 ou -1
+	private long lastDirectionChange = 0;
+	private static final double WALL_MARGIN = 40;
+
 	/**
 	 * run: PrimeiroRobo's default behavior
 	 */
 	public void run() {
-		setColors(Color.green,Color.green,Color.blue); // body,gun,radar
-		// Robot main loop
+		setColors(Color.green, Color.green, Color.blue); // body, gun, radar
+		setAdjustGunForRobotTurn(true); // Gun independente do corpo
+		setAdjustRadarForGunTurn(true); // Radar independente da arma
+		// Loop principal: varrer o radar continuamente
 		while(true) {
-			// Evita ficar em cantos: se estiver perto de um canto, mova-se para o centro
-			double margin = 80;
-			double x = getX();
-			double y = getY();
-			double fieldWidth = getBattleFieldWidth();
-			double fieldHeight = getBattleFieldHeight();
-			if (x < margin || x > fieldWidth - margin || y < margin || y > fieldHeight - margin) {
-				turnToAngle(90 + Math.random() * 180); // Vira para longe do canto
-				ahead(150);
-			}
-			// Gira o radar constantemente para buscar inimigos
-			turnRadarRight(360);
-			// Movimento lateral para dificultar tiros
-			turnRight(90);
-			ahead(100 + Math.random() * 50);
+			// Mantém radar girando para achar / manter lock
+			setTurnRadarRight(360);
+			execute();
 		}
 	}
-
-    // Gira para um ângulo absoluto
-    public void turnToAngle(double angle) {
-        double turn = angle - getHeading();
-        while (turn < -180) turn += 360;
-        while (turn > 180) turn -= 360;
-        turnRight(turn);
-    }
-
 
 	/**
 	 * onScannedRobot: What to do when you see another robot
 	 */
 	public void onScannedRobot(ScannedRobotEvent e) {
-		// Mira preditiva simples para inimigos parados
+		// Bearing absoluto em graus
+		double absBearing = getHeading() + e.getBearing();
+		// Travar radar: sobrecompensa para manter lock
+		double radarTurn = Utils.normalRelativeAngleDegrees(absBearing - getRadarHeading());
+		setTurnRadarRight(radarTurn * 2);
+
+		// Escolha de potência adaptativa
 		double distance = e.getDistance();
-		double firePower = 3.0;
-		if (distance > 400) firePower = 1.0;
-		else if (distance > 200) firePower = 2.0;
-		// Predição simples: se o inimigo está quase parado, mire direto; se está se movendo, tente prever
+		double firePower;
+		if (distance > 600) firePower = 1.0;
+		else if (distance > 350) firePower = 1.8;
+		else if (distance > 180) firePower = 2.2;
+		else firePower = 3.0;
+		if (getEnergy() < 20) firePower = Math.min(firePower, 1.5); // Conserva energia
+
+		// Coordenadas atuais do inimigo (estimativa inicial)
+		double enemyX = getX() + distance * Math.sin(Math.toRadians(absBearing));
+		double enemyY = getY() + distance * Math.cos(Math.toRadians(absBearing));
+
+		// Linear prediction
 		double enemyHeading = e.getHeading();
 		double enemyVelocity = e.getVelocity();
 		double bulletSpeed = 20 - 3 * firePower;
-		double angleToEnemy = e.getBearing();
-		double absBearing = getHeading() + angleToEnemy;
-		double predictedX = getX() + distance * Math.sin(Math.toRadians(absBearing));
-		double predictedY = getY() + distance * Math.cos(Math.toRadians(absBearing));
-		// Se o inimigo está parado, atire direto
-		if (Math.abs(enemyVelocity) < 0.1) {
-			turnGunRight(angleToEnemy - getGunHeading() + getHeading());
-		} else {
-			// Predição simples para inimigos em movimento
-			double time = distance / bulletSpeed;
-			predictedX += enemyVelocity * time * Math.sin(Math.toRadians(enemyHeading));
-			predictedY += enemyVelocity * time * Math.cos(Math.toRadians(enemyHeading));
-			double dx = predictedX - getX();
-			double dy = predictedY - getY();
-			double theta = Math.toDegrees(Math.atan2(dx, dy));
-			turnGunRight(theta - getGunHeading());
+		double time = 0.0;
+		double predictedX = enemyX;
+		double predictedY = enemyY;
+		while ((++time) * bulletSpeed < Point2D.distance(getX(), getY(), predictedX, predictedY) && time < 60) {
+			predictedX += enemyVelocity * Math.sin(Math.toRadians(enemyHeading));
+			predictedY += enemyVelocity * Math.cos(Math.toRadians(enemyHeading));
+			// Limita dentro da arena
+			predictedX = Math.max(18, Math.min(getBattleFieldWidth() - 18, predictedX));
+			predictedY = Math.max(18, Math.min(getBattleFieldHeight() - 18, predictedY));
 		}
-		fire(firePower);
-		// Movimento lateral (circling) ao redor do inimigo
-		turnRight(angleToEnemy + 90);
-		ahead(60);
+
+		// Apontar arma
+		double theta = Math.toDegrees(Math.atan2(predictedX - getX(), predictedY - getY()));
+		double gunTurn = Utils.normalRelativeAngleDegrees(theta - getGunHeading());
+		setTurnGunRight(gunTurn);
+
+		// Movimento perpendicular + evasão por perda de energia (deteção de tiro)
+		double energyDrop = lastEnemyEnergy - e.getEnergy();
+		if (energyDrop > 0 && energyDrop <= 3.0) { // Provável tiro do inimigo
+			moveDirection = -moveDirection;
+			lastDirectionChange = getTime();
+		}
+
+		// Altera direção periodicamente para imprevisibilidade
+		if (getTime() - lastDirectionChange > 40) {
+			moveDirection = -moveDirection;
+			lastDirectionChange = getTime();
+		}
+
+		// Calcular movimento perpendicular suavizado para paredes
+		double goAngle = Math.toRadians(absBearing + 90 * moveDirection);
+		goAngle = wallSmoothing(goAngle, moveDirection);
+		setTurnRightRadians(Utils.normalRelativeAngle(goAngle - Math.toRadians(getHeading())));
+		setAhead(150 * moveDirection);
+
+		// Atira se a arma estiver alinhada razoavelmente
+		if (Math.abs(gunTurn) < 20 && getGunHeat() == 0) {
+			setFire(firePower);
+		}
+
+		lastEnemyEnergy = e.getEnergy();
+	}
+
+	// Smoothing simples: ajusta ângulo para não colidir com paredes
+	private java.awt.geom.Point2D.Double getPoint(double x, double y){
+		return new java.awt.geom.Point2D.Double(x,y);
+	}
+
+	private double wallSmoothing(double angle, int orientation) {
+		// Trabalha em radianos
+		for (int i = 0; i < 10; i++) {
+			double testX = getX() + 120 * Math.sin(angle);
+			double testY = getY() + 120 * Math.cos(angle);
+			if (testX > WALL_MARGIN && testX < getBattleFieldWidth() - WALL_MARGIN && testY > WALL_MARGIN && testY < getBattleFieldHeight() - WALL_MARGIN) {
+				break; // seguro
+			}
+			angle += orientation * Math.toRadians(10); // ajusta ângulo
+		}
+		return angle;
 	}
 
 	/**
 	 * onHitByBullet: What to do when you're hit by a bullet
 	 */
 	public void onHitByBullet(HitByBulletEvent e) {
-		// Movimento evasivo ao ser atingido
-		turnRight(90 - e.getBearing());
-		ahead(100);
+		// Evasão rápida: muda direção e desloca
+		moveDirection = -moveDirection;
+		setAhead(120 * moveDirection);
+		setTurnRight(90 - e.getBearing());
 	}
 	
 	/**
 	 * onHitWall: What to do when you hit a wall
 	 */
 	public void onHitWall(HitWallEvent e) {
-		// Afasta-se rapidamente da parede
-		back(100);
-		turnRight(90);
+		moveDirection = -moveDirection;
+		setAhead(150 * moveDirection);
+		setTurnRight(100);
 	}	
 }
