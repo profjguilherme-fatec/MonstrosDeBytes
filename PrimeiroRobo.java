@@ -33,14 +33,16 @@ public class PrimeiroRobo extends Robot
 			turnRight(90);
 			ahead(100 + Math.random() * 50);
 		}
-	// Gira para um ângulo absoluto
-	public void turnToAngle(double angle) {
-		double turn = angle - getHeading();
-		while (turn < -180) turn += 360;
-		while (turn > 180) turn -= 360;
-		turnRight(turn);
 	}
-	}
+
+    // Gira para um ângulo absoluto
+    public void turnToAngle(double angle) {
+        double turn = angle - getHeading();
+        while (turn < -180) turn += 360;
+        while (turn > 180) turn -= 360;
+        turnRight(turn);
+    }
+
 
 	/**
 	 * onScannedRobot: What to do when you see another robot
@@ -74,7 +76,7 @@ public class PrimeiroRobo extends Robot
 		}
 		fire(firePower);
 		// Movimento lateral (circling) ao redor do inimigo
-		setTurnRight(angleToEnemy + 90);
+		turnRight(angleToEnemy + 90);
 		ahead(60);
 	}
 
