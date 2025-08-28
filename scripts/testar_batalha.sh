@@ -22,7 +22,7 @@ robocode.battle.robots=$ROBO,$OPONENTE
 EOF
 
 # Roda a batalha sem interface gráfica, salva tudo em 'resultado.txt'
-java -Xmx512M -cp libs/robocode.jar robocode.Robocode -battle battle_logs/simples.battle -nodisplay > battle_logs/resultado.txt || {
+java -Xmx512M -cp "libs/*" robocode.Robocode -battle battle_logs/simples.battle -nodisplay > battle_logs/resultado.txt || {
     echo "Erro ao executar Robocode."
     exit 2
 }
