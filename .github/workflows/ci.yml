@@ -43,6 +43,15 @@ jobs:
           mkdir -p out
           javac -cp libs/robocode.jar -d out PrimeiroRobo.java
           spotbugs-4.8.3/bin/spotbugs -textui out/
+     
+      - name: Testar batalha automatizada
+        run: bash scripts/testar_batalha.sh
+
+      - name: Upload dos logs de batalha
+        uses: actions/upload-artifact@v4
+        with:
+          name: battle-logs
+          path: battle_logs/
 
       - name: Exibir mensagem final de sucesso
         if: ${{ success() }}
