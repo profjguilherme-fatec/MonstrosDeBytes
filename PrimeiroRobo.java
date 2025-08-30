@@ -7,8 +7,8 @@ import java.awt.geom.Point2D;
 // API help : https://robocode.sourceforge.io/docs/robocode/robocode/Robot.html
 
 /**
- * PrimeiroRobo - a robot by (your name here)
- * Push para teste de webhook
+ * PrimeiroRobo - a robot by (JGuilherme)
+ * Push para teste de webhook / alterado package
  */
 public class PrimeiroRobo extends AdvancedRobot
 {
