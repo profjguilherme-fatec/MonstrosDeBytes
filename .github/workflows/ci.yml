@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  qualidade_e_segurança:
+  qualidade_e_seguranca:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
