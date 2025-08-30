@@ -21,7 +21,7 @@ jobs:
           java-version: '11'
 
       - name: Compilar PrimeiroRobo.java com dependência robocode.jar
-        run: javac -cp libs/robocode.jar PrimeiroRobo.java
+        rrun: javac -cp libs/robocode.jar -d robots src/sample/PrimeiroRobo.java
 
       - name: Baixar Checkstyle (10.12.4)
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
