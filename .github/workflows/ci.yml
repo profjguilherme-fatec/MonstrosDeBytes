@@ -1,4 +1,4 @@
-name: CI - Teste, Qualidade e Segurança (Robocode Local)
+name: CI - Robocode Aleração update
 
 on:
   push:
@@ -7,56 +7,54 @@ on:
     branches: [ main ]
 
 jobs:
-  qualidade-seguranca:
+  qualidade_e_segurança:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Compilar PrimeiroRobo.java com dependência robocode.jar
+      - name: Compile PrimeiroRobo.java
         run: javac -cp libs/robocode.jar -d robots src/sample/PrimeiroRobo.java
 
-      - name: Baixar Checkstyle (10.12.4)
+      - name: Download Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
-      - name: Rodar Checkstyle
+      - name: Run Checkstyle
         run: java -jar checkstyle.jar -c libs/google_checks.xml src/
 
-      - name: Baixar SpotBugs
+      - name: Download SpotBugs
         run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
 
-      - name: Extrair SpotBugs
+      - name: Extract SpotBugs
         run: tar -xzf spotbugs.tgz
 
-      - name: Dar permissão de execução ao spotbugs
+      - name: Set execute permission to SpotBugs
         run: chmod +x spotbugs-4.8.3/bin/spotbugs
 
-      - name: Rodar SpotBugs
+      - name: Run SpotBugs
         run: |
           mkdir -p out
           javac -cp libs/robocode.jar -d out src/sample/PrimeiroRobo.java
           spotbugs-4.8.3/bin/spotbugs -textui out/
 
-      - name: Testar batalha automatizada
+      - name: Run battle test
         run: bash scripts/testar_batalha.sh
 
-      - name: Upload dos logs de batalha (sempre executar)
+      - name: Upload battle logs (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: battle-logs
           path: battle_logs/
 
-      - name: Exibir mensagem final de sucesso
+      - name: Success Message
         if: ${{ success() }}
         run: |
-          echo '🎉 CI executado com sucesso!'
-          echo 'Robô compilado, verificado com Checkstyle e analisado com SpotBugs.'
-          echo 'Arquivo usado: PrimeiroRobo.java'
-          echo 'Parabéns, pipeline completa e aprovada! 🚦'
+          echo 'CI finalizado com sucesso!'
+          echo 'Pipeline completa e aprovada.'
