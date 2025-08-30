@@ -1,4 +1,4 @@
-name: CI - Robocode Aleração update
+name: CI - Robocode Aleração update - alteração após merge
 
 on:
   push:
