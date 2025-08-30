@@ -27,7 +27,7 @@ jobs:
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
       - name: Rodar Checkstyle
-        run: java -jar checkstyle.jar -c libs/google_checks.xml PrimeiroRobo.java
+        run: java -jar checkstyle.jar -c libs/google_checks.xml src/
 
       - name: Baixar SpotBugs
         run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
