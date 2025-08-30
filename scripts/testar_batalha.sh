@@ -2,7 +2,7 @@
 set -e
 
 ROBOCODE_JAR="../libs/robocode.jar" # Ajuste o path conforme necessário!
-ROBO="aprendizado.PrimeiroRobo"
+ROBO="sample.PrimeiroRobo"
 OPONENTE="sample.Corners"    # Você pode trocar pelo adversário que preferir
 
 cd "$(dirname "$0")/.."      # Garante que sempre rode a partir da raiz do projeto
