@@ -19,8 +19,8 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Compile PrimeiroRobo.java
-        run: javac -cp libs/robocode.jar -d robots src/sample/PrimeiroRobo.java
+      - name: Compile Robos
+        run: javac -cp libs/robocode.jar -d robots src/github/*.java
 
       - name: Download Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
@@ -40,7 +40,7 @@ jobs:
       - name: Run SpotBugs
         run: |
           mkdir -p out
-          javac -cp libs/robocode.jar -d out src/sample/PrimeiroRobo.java
+          javac -cp libs/robocode.jar -d out src/github/PrimeiroRobo.java
           spotbugs-4.8.3/bin/spotbugs -textui out/
 
       - name: Run battle test

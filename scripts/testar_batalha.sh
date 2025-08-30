@@ -3,9 +3,9 @@ set -e
 
 # VARIÁVEIS DE CONFIGURAÇÃO
 ROBOCODE_JAR="libs/robocode.jar" # Ajuste se necessário
-PACKAGE="sample"                   # ajuste do package
+PACKAGE="github"                   # ajuste do package
 ROBO="$PACKAGE.PrimeiroRobo"
-OPONENTE="sample.Corners"        # Pode trocar o oponente se quiser
+OPONENTE="$PACKAGE.Corners"        # Pode trocar o oponente se quiser
 
 echo "Compilando seu robô..."
 # Compila explicitamente: ajuste o caminho conforme a estrutura do seu projeto!
