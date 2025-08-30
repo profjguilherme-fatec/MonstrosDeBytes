@@ -41,7 +41,7 @@ jobs:
       - name: Rodar SpotBugs
         run: |
           mkdir -p out
-          javac -cp libs/robocode.jar -d out PrimeiroRobo.java
+          javac -cp libs/robocode.jar -d out src/sample/PrimeiroRobo.java
           spotbugs-4.8.3/bin/spotbugs -textui out/
      
       - name: Testar batalha automatizada
