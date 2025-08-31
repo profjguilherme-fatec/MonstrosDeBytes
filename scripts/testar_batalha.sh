@@ -1,18 +1,16 @@
 #!/bin/bash
 set -e
 
-# VARIÁVEIS DE CONFIGURAÇÃO
-ROBOCODE_JAR="libs/robocode.jar" # Path do JAR
+# Permite passar o caminho dos .class como argumento, padrão = robocode/robots/
+ROBO_DIR="${1:-robocode/robots}"
+
+ROBOCODE_JAR="libs/robocode.jar"
 PACKAGE="github"
 ROBO="$PACKAGE.PrimeiroRobo"
-OPONENTE="$PACKAGE.Cornes" # Corrija para 'Corners' se o certo for esse!
+OPONENTE="$PACKAGE.Cornes"  # Ajuste para Corners se for o correto!
 
-# Vai para a raiz do projeto (se o script estiver em scripts/)
+# Vai para a raiz do projeto (caso o script seja chamado de scripts/)
 cd "$(dirname "$0")/.."
-
-echo "Compilando robôs localmente para garantir classes atualizadas..."
-mkdir -p robots/github
-javac -cp "$ROBOCODE_JAR" -d robots/ src/$PACKAGE/*.java
 
 echo "Rodando batalha headless ($ROBO vs $OPONENTE)..."
 mkdir -p battle_logs
@@ -28,8 +26,12 @@ robocode.battle.hideEnemyNames=false
 robocode.battle.robots=$ROBO,$OPONENTE
 EOF
 
-# Executa batalha e salva saída (stdout e stderr)
-java -Xmx512M -cp "libs/*:robots/" robocode.Robocode -battle battle_logs/simples.battle -nodisplay > battle_logs/resultado.txt 2>&1 || {
+# Verifica se os .class estão onde devem estar
+echo "Listando arquivos em $ROBO_DIR/github/ para debug:"
+ls -l "$ROBO_DIR/github/" || { echo "Robôs não encontrados em $ROBO_DIR/github/"; exit 7; }
+
+# Executa o Robocode, inclui o caminho correto dos .class no classpath
+java -Xmx512M -cp "libs/*:$ROBO_DIR/" robocode.Robocode -battle battle_logs/simples.battle -nodisplay > battle_logs/resultado.txt 2>&1 || {
   echo "Erro ao executar Robocode."
   exit 2
 }

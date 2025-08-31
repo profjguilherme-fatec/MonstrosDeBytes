@@ -1,4 +1,4 @@
-name: CI - Robocode Alteração update - corrigindo pasta .class
+name: CI - Corrigindo pstas Robocode
 
 on:
   push:
@@ -24,8 +24,13 @@ jobs:
           mkdir -p robots/github
           javac -cp libs/robocode.jar -d robots src/github/*.java
 
-      - name: List robots/github for debug
-        run: ls -l robots/github
+      - name: Copiar .class para robocode/robots/github
+        run: |
+          mkdir -p robocode/robots/github
+          cp robots/github/*.class robocode/robots/github/
+
+      - name: List robocode/robots/github for debug
+        run: ls -l robocode/robots/github
 
       - name: Download Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
@@ -49,7 +54,8 @@ jobs:
           spotbugs-4.8.3/bin/spotbugs -textui out/
 
       - name: Run battle test
-        run: bash scripts/testar_batalha.sh
+        run: |
+          bash scripts/testar_batalha.sh robocode/robots
 
       - name: Upload battle logs (always)
         if: always()
