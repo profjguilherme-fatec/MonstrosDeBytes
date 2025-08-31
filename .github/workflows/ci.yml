@@ -1,4 +1,4 @@
-name: CI - Robocode Aleração update - alteração após merge
+name: CI - Robocode Alteração update - corrigindo pasta .class
 
 on:
   push:
@@ -20,7 +20,12 @@ jobs:
           java-version: '11'
 
       - name: Compile Robos
-        run: javac -cp libs/robocode.jar -d robots src/github/*.java
+        run: |
+          mkdir -p robots/github
+          javac -cp libs/robocode.jar -d robots src/github/*.java
+
+      - name: List robots/github for debug
+        run: ls -l robots/github
 
       - name: Download Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
