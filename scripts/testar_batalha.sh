@@ -1,21 +1,28 @@
 #!/bin/bash
 set -e
 
-# Permite passar o caminho dos .class como argumento, padrão = robocode/robots/
+# Caminho dos .class recebido como argumento, padrão = robocode/robots
 ROBO_DIR="${1:-robocode/robots}"
 
 ROBOCODE_JAR="libs/robocode.jar"
 PACKAGE="github"
 ROBO="$PACKAGE.PrimeiroRobo"
-OPONENTE="$PACKAGE.Cornes"  # Ajuste para Corners se for o correto!
+OPONENTE="$PACKAGE.Corners" # ATENÇÃO: nome igual ao .class!
 
-# Vai para a raiz do projeto (caso o script seja chamado de scripts/)
+# Vai pra raiz do projeto (caso seja chamado de scripts/)
 cd "$(dirname "$0")/.."
 
-echo "Rodando batalha headless ($ROBO vs $OPONENTE)..."
+echo "==== TESTE DE BATALHA ===="
+echo "Robôs testados: $ROBO vs $OPONENTE"
+echo "Diretório dos .class: $ROBO_DIR/github/"
+
 mkdir -p battle_logs
 
-# Cria arquivo de configuração .battle
+# --- Diagnóstico: mostra arquivos dos robôs antes da batalha
+echo "Listando robôs no $ROBO_DIR/github/:"
+ls -l "$ROBO_DIR/github/" || { echo "Robôs não encontrados!"; exit 9; }
+
+# Cria o arquivo de configuração da batalha (.battle)
 cat > battle_logs/simples.battle <<EOF
 robocode.battleField.width=800
 robocode.battleField.height=600
@@ -26,27 +33,24 @@ robocode.battle.hideEnemyNames=false
 robocode.battle.robots=$ROBO,$OPONENTE
 EOF
 
-# Verifica se os .class estão onde devem estar
-echo "Listando arquivos em $ROBO_DIR/github/ para debug:"
-ls -l "$ROBO_DIR/github/" || { echo "Robôs não encontrados em $ROBO_DIR/github/"; exit 7; }
+echo "Arquivo .battle gerado:"
+cat battle_logs/simples.battle
 
-# Executa o Robocode, inclui o caminho correto dos .class no classpath
+# Executa a batalha (headless)
 java -Xmx512M -cp "libs/*:$ROBO_DIR/" robocode.Robocode -battle battle_logs/simples.battle -nodisplay > battle_logs/resultado.txt 2>&1 || {
   echo "Erro ao executar Robocode."
   exit 2
 }
 
-echo "Analisando resultado da batalha..."
-echo "------ INÍCIO DO RESULTADO ------"
+echo "Resultado parcial da batalha (primeiras linhas):"
 head -30 battle_logs/resultado.txt
-echo "------ FIM DO RESULTADO ------"
 
-# Checa se seu robô ficou em 1º lugar (linha deve bater EXATAMENTE!)
+# Checagem simples pela vitória do seu robô (ajuste se quiser outra checagem)
 if grep -q "1st: $ROBO" battle_logs/resultado.txt; then
-  echo "✅ Seu robô venceu a batalha!"
+  echo "✅ $ROBO venceu a batalha!"
   exit 0
 else
-  echo "❌ Seu robô NÃO venceu a batalha."
-  echo "Sugestão: confira o conteúdo completo em battle_logs/resultado.txt para investigar possíveis causas."
+  echo "❌ $ROBO NÃO venceu a batalha ou nenhum robô foi executado."
+  echo "Veja battle_logs/resultado.txt para investigar."
   exit 1
 fi

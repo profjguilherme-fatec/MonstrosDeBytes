@@ -1,4 +1,4 @@
-name: CI - Corrigindo pastas Robocode
+name: CI - Corrigindo batalha sem robo
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
           mkdir -p robocode/robots/github
           cp robots/github/*.class robocode/robots/github/
 
-      # === PASSOS DE DEBUG AVANÇADO ===
+      # Passos de debug para estruturas de pastas
       - name: List robots directory structure
         run: |
           echo 'Conteúdo de robots/:'
@@ -38,12 +38,6 @@ jobs:
         run: |
           echo 'Conteúdo de robocode/robots/:'
           ls -lR robocode/robots
-      - name: Mostrar arquivo .battle
-        run: |
-          echo 'Conteúdo do .battle gerado:'
-          cat battle_logs/simples.battle || echo "Arquivo .battle ainda não criado."
-      # ================================
-
       - name: List robocode/robots/github for debug
         run: ls -l robocode/robots/github
 
@@ -71,6 +65,14 @@ jobs:
       - name: Run battle test
         run: |
           bash scripts/testar_batalha.sh robocode/robots
+
+      # Passo adicional para debugar o .battle e o resultado da batalha, após execução
+      - name: Verificar arquivo e resultado da batalha
+        run: |
+          echo 'Arquivo .battle:'
+          cat battle_logs/simples.battle || echo "Arquivo .battle não existe"
+          echo 'Partial resultado da batalha:'
+          head -30 battle_logs/resultado.txt || echo "Resultado da batalha não encontrado"
 
       - name: Upload battle logs (always)
         if: always()
