@@ -1,4 +1,4 @@
-name: CI - Corrigindo pstas Robocode
+name: CI - Corrigindo pastas Robocode
 
 on:
   push:
@@ -28,6 +28,21 @@ jobs:
         run: |
           mkdir -p robocode/robots/github
           cp robots/github/*.class robocode/robots/github/
+
+      # === PASSOS DE DEBUG AVANÇADO ===
+      - name: List robots directory structure
+        run: |
+          echo 'Conteúdo de robots/:'
+          ls -lR robots
+      - name: List robocode/robots directory structure
+        run: |
+          echo 'Conteúdo de robocode/robots/:'
+          ls -lR robocode/robots
+      - name: Mostrar arquivo .battle
+        run: |
+          echo 'Conteúdo do .battle gerado:'
+          cat battle_logs/simples.battle || echo "Arquivo .battle ainda não criado."
+      # ================================
 
       - name: List robocode/robots/github for debug
         run: ls -l robocode/robots/github
