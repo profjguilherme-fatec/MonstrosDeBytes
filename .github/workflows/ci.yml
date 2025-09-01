@@ -1,61 +1,42 @@
 name: CI - Corrigindo batalha sem robo
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   qualidade_e_seguranca:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Compile Robos
+      # Compile direto para o destino do Robocode!
+      - name: Compile Robos direto na pasta do Robocode
         run: |
-          mkdir -p robots/github
-          javac -cp libs/robocode.jar -d robots src/github/*.java
+          mkdir -p robocode/robots
+          javac -cp libs/robocode.jar -d robocode/robots src/github/*.java
 
-      - name: Copiar .class para robocode/robots/github
-        run: |
-          mkdir -p robocode/robots/github
-          cp robots/github/*.class robocode/robots/github/
-
-      # Passos de debug para estruturas de pastas
-      - name: List robots directory structure
-        run: |
-          echo 'Conteúdo de robots/:'
-          ls -lR robots
-      - name: List robocode/robots directory structure
-        run: |
-          echo 'Conteúdo de robocode/robots/:'
-          ls -lR robocode/robots
+      # Check directory para evitar surpresas
       - name: List robocode/robots/github for debug
         run: ls -l robocode/robots/github
 
       - name: Download Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
-
       - name: Run Checkstyle
         run: java -jar checkstyle.jar -c libs/google_checks.xml src/
 
       - name: Download SpotBugs
         run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
-
       - name: Extract SpotBugs
         run: tar -xzf spotbugs.tgz
-
       - name: Set execute permission to SpotBugs
         run: chmod +x spotbugs-4.8.3/bin/spotbugs
-
       - name: Run SpotBugs
         run: |
           mkdir -p out
@@ -66,7 +47,6 @@ jobs:
         run: |
           bash scripts/testar_batalha.sh robocode/robots
 
-      # Passo adicional para debugar o .battle e o resultado da batalha, após execução
       - name: Verificar arquivo e resultado da batalha
         run: |
           echo 'Arquivo .battle:'
