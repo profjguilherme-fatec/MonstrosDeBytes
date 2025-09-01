@@ -34,8 +34,7 @@ jobs:
       - name: Permissão para SpotBugs
         run: chmod +x spotbugs-4.8.3/bin/spotbugs
 
-      # SpotBugs agora analisará a pasta dos robôs compilados (depois da compilação no job steps_robocode)
-      - name: Upload Spotbugs para uso no job Robocode (debug, opcional)
+      - name: Upload SpotBugs para job de Robocode
         uses: actions/upload-artifact@v4
         with:
           name: spotbugs
@@ -54,10 +53,11 @@ jobs:
           distribution: 'temurin'
           java-version: '8'
 
-      - name: Limpar builds antigos
+      - name: Preparar estrutura dos robôs
         run: |
           rm -rf robocode/robots/github/
           mkdir -p robocode/robots/github/
+          mkdir -p battle_logs/
 
       - name: Compilar robôs na pasta do Robocode
         run: |
@@ -82,6 +82,8 @@ jobs:
           cat battle_logs/simples.battle || echo "Arquivo .battle não existe"
           echo 'Partial resultado da batalha:'
           head -30 battle_logs/resultado.txt || echo "Resultado da batalha não encontrado"
+          echo 'Conteúdo completo do resultado.txt'
+          cat battle_logs/resultado.txt || echo "Sem resultado completo"
 
       - name: Upload battle logs (sempre)
         if: always()
@@ -95,4 +97,3 @@ jobs:
         run: |
           echo 'CI finalizado com sucesso!'
           echo 'Pipeline completa e aprovada.'
-
