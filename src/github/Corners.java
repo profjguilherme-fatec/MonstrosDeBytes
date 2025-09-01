@@ -1,67 +1,140 @@
-#!/bin/bash
-set -e
+/*
+ * Copyright (c) 2001-2025 Mathew A. Nelson and Robocode contributors
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * https://robocode.sourceforge.io/license/epl-v10.html
+ */
+package github;
 
-# Mostra o diretório atual de execução para debug CI
-echo "Diretório atual do runner: $(pwd)"
 
-# Caminho dos .class recebido como argumento, padrão = robocode/robots
-ROBO_DIR="${1:-robocode/robots}"
-ROBOCODE_JAR="libs/robocode.jar"
-PACKAGE="github"
-ROBO="$PACKAGE.PrimeiroRobo"
-OPONENTE="$PACKAGE.Corners" # ATENÇÃO: nome idêntico ao .class!
+import robocode.DeathEvent;
+import robocode.Robot;
+import robocode.ScannedRobotEvent;
+import static robocode.util.Utils.normalRelativeAngleDegrees;
 
-# Vai para a raiz do projeto (caso seja chamado de scripts/)
-cd "$(dirname "$0")/.."
+import java.awt.*;
 
-# Caminho absoluto dos robôs, evitando bugs na execução via CI/GitHub Actions
-ABS_ROBO_DIR="$(cd "$ROBO_DIR" && pwd)"
 
-echo "==== TESTE DE BATALHA ===="
-echo "Robôs testados: $ROBO vs $OPONENTE"
-echo "Diretório dos .class (relativo): $ROBO_DIR/github/"
-echo "Diretório dos .class (absoluto): $ABS_ROBO_DIR/github/"
+/**
+ * Corners - a sample robot by Mathew Nelson.
+ * <p>
+ * This robot moves to a corner, then swings the gun back and forth.
+ * If it dies, it tries a new corner in the next round.
+ *
+ * @author Mathew A. Nelson (original)
+ * @author Flemming N. Larsen (contributor)
+ */
+public class Corners extends Robot {
+	int others; // Number of other robots in the game
+	static int corner = 0; // Which corner we are currently using
+	// static so that it keeps it between rounds.
+	boolean stopWhenSeeRobot = false; // See goCorner()
 
-mkdir -p battle_logs
+	/**
+	 * run:  Corners' main run function.
+	 */
+	public void run() {
+		// Set colors
+		setBodyColor(Color.red);
+		setGunColor(Color.black);
+		setRadarColor(Color.yellow);
+		setBulletColor(Color.green);
+		setScanColor(Color.green);
 
-# --- Diagnóstico: mostra arquivos dos robôs antes da batalha
-echo "Listando robôs em $ABS_ROBO_DIR/github/:"
-ls -l "$ABS_ROBO_DIR/github/" || { echo "Robôs não encontrados!"; exit 9; }
+		// Save # of other bots
+		others = getOthers();
 
-# Cria o arquivo de configuração da batalha (.battle)
-cat > battle_logs/simples.battle <<EOF
-robocode.battleField.width=800
-robocode.battleField.height=600
-robocode.battle.numRounds=3
-robocode.battle.gunCoolingRate=0.1
-robocode.battle.rules.inactivityTime=450
-robocode.battle.hideEnemyNames=false
-robocode.battle.robots=$ROBO,$OPONENTE
-EOF
+		// Move to a corner
+		goCorner();
 
-echo "Arquivo .battle gerado:"
-cat battle_logs/simples.battle
+		// Initialize gun turn speed to 3
+		int gunIncrement = 3;
 
-# Executa a batalha (headless) - classe principal precisa encontrar os .class dos robôs!
-echo "Iniciando Robocode headless com classpath: libs/*:$ABS_ROBO_DIR/"
-java -Xmx512M -cp "libs/*:$ABS_ROBO_DIR/" robocode.Robocode -battle battle_logs/simples.battle -nodisplay \
-    > battle_logs/resultado.txt 2>&1 || {
-    echo "Erro ao executar Robocode."
-    exit 2
+		// Spin gun back and forth
+		while (true) {
+			for (int i = 0; i < 30; i++) {
+				turnGunLeft(gunIncrement);
+			}
+			gunIncrement *= -1;
+		}
+	}
+
+	/**
+	 * goCorner:  A very inefficient way to get to a corner.  Can you do better?
+	 */
+	public void goCorner() {
+		// We don't want to stop when we're just turning...
+		stopWhenSeeRobot = false;
+		// turn to face the wall to the "right" of our desired corner.
+		turnRight(normalRelativeAngleDegrees(corner - getHeading()));
+		// Ok, now we don't want to crash into any robot in our way...
+		stopWhenSeeRobot = true;
+		// Move to that wall
+		ahead(5000);
+		// Turn to face the corner
+		turnLeft(90);
+		// Move to the corner
+		ahead(5000);
+		// Turn gun to starting point
+		turnGunLeft(90);
+	}
+
+	/**
+	 * onScannedRobot:  Stop and fire!
+	 */
+	public void onScannedRobot(ScannedRobotEvent e) {
+		// Should we stop, or just fire?
+		if (stopWhenSeeRobot) {
+			// Stop everything!  You can safely call stop multiple times.
+			stop();
+			// Call our custom firing method
+			smartFire(e.getDistance());
+			// Look for another robot.
+			// NOTE:  If you call scan() inside onScannedRobot, and it sees a robot,
+			// the game will interrupt the event handler and start it over
+			scan();
+			// We won't get here if we saw another robot.
+			// Okay, we didn't see another robot... start moving or turning again.
+			resume();
+		} else {
+			smartFire(e.getDistance());
+		}
+	}
+
+	/**
+	 * smartFire:  Custom fire method that determines firepower based on distance.
+	 *
+	 * @param robotDistance the distance to the robot to fire at
+	 */
+	public void smartFire(double robotDistance) {
+		if (robotDistance > 200 || getEnergy() < 15) {
+			fire(1);
+		} else if (robotDistance > 50) {
+			fire(2);
+		} else {
+			fire(3);
+		}
+	}
+
+	/**
+	 * onDeath:  We died.  Decide whether to try a different corner next game.
+	 */
+	public void onDeath(DeathEvent e) {
+		// Well, others should never be 0, but better safe than sorry.
+		if (others == 0) {
+			return;
+		}
+
+		// If 75% of the robots are still alive when we die, we'll switch corners.
+		if (getOthers() / (double) others >= .75) {
+			corner += 90;
+			if (corner == 270) {
+				corner = -90;
+			}
+			out.println("I died and did poorly... switching corner to " + corner);
+		} else {
+			out.println("I died but did well.  I will still use corner " + corner);
+		}
+	}
 }
-
-echo "Resultado parcial da batalha (primeiras linhas):"
-head -30 battle_logs/resultado.txt
-
-echo "Robôs reconhecidos no log da batalha:"
-grep -Eo "$PACKAGE\.[A-Za-z0-9_]+" battle_logs/resultado.txt | sort | uniq || echo "(Nenhum robô reconhecido)"
-
-# Checagem simples pela vitória do seu robô (ajuste se quiser outra checagem)
-if grep -q "1st: $ROBO" battle_logs/resultado.txt; then
-    echo "✅ $ROBO venceu a batalha!"
-    exit 0
-else
-    echo "❌ $ROBO NÃO venceu a batalha ou nenhum robô foi executado."
-    echo "Veja battle_logs/resultado.txt para investigar."
-    exit 1
-fi
