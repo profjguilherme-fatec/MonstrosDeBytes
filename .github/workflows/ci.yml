@@ -1,4 +1,4 @@
-name: CI - Corrigindo batalha sem robo
+name: CI - Ainda sem sucesso
 
 on:
   push:
