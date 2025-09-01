@@ -13,11 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java (Java 11 obrigatório)
+      - name: Setup Java 8 (Robocode exige Java 8)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '11'
+          java-version: '8'
 
       # Limpar builds antigos antes de recompilar
       - name: Limpar builds antigos
