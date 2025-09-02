@@ -53,41 +53,37 @@ jobs:
           distribution: 'temurin'
           java-version: '8'
 
-      # A etapa de preparar robôs pode ser mantida, mesmo que não compilará para samples
       - name: Preparar estrutura dos robôs
         run: |
           rm -rf robocode/robots/github/
           mkdir -p robocode/robots/github/
           mkdir -p battle_logs/
 
-      # As etapas de compilação e listings continuam,
-      # mas serão indiferentes para os samples
       - name: Compilar robôs na pasta do Robocode
         run: |
-          javac -cp libs/robocode.jar -d robocode/robots src/github/*.java || echo "Nenhum robô personalizado a compilar"
+          javac -cp libs/robocode.jar -d robocode/robots src/github/*.java
 
       - name: Conferir versões dos .class
         run: |
           for f in robocode/robots/github/*.class; do
             echo -n "$f: "; javap -verbose "$f" | grep "major version"
-          done || echo "Sem arquivos .class personalizados"
+          done
 
       - name: Listar robocode/robots/github para debug
-        run: ls -l robocode/robots/github || echo "Sem arquivos .class personalizados"
+        run: ls -l robocode/robots/github
 
-      # Aqui o step principal foi clarificado
-      - name: Rodar batalha entre robôs sample do Robocode
+      - name: Rodar batalha de teste
         run: |
-          bash scripts/testar_batalha.sh
+          bash scripts/testar_batalha.sh robocode/robots
 
       - name: Verificar arquivos e resultado da batalha
         run: |
           echo 'Arquivo .battle:'
-          cat battle_logs/sample_vs_sample.battle || cat battle_logs/simples.battle || echo "Arquivo .battle não existe"
+          cat battle_logs/simples.battle || echo "Arquivo .battle não existe"
           echo 'Partial resultado da batalha:'
-          head -30 battle_logs/sample_result.txt || head -30 battle_logs/resultado.txt || echo "Resultado da batalha não encontrado"
+          head -30 battle_logs/resultado.txt || echo "Resultado da batalha não encontrado"
           echo 'Conteúdo completo do resultado.txt'
-          cat battle_logs/sample_result.txt || cat battle_logs/resultado.txt || echo "Sem resultado completo"
+          cat battle_logs/resultado.txt || echo "Sem resultado completo"
 
       - name: Upload battle logs (sempre)
         if: always()
