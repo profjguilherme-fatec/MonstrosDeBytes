@@ -6,12 +6,22 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  ROBOTS_JAVA_DIR: MonstrosDeBytes/robocode/robots/github
+  ROBOTS_CLASS_DIR: MonstrosDeBytes/robocode/robots/github # saída dos .class no mesmo local
+
 jobs:
   qualidade_e_batalha:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
+
+      - name: Listar localização de robôs no repositório
+        run: |
+          echo "Arquivos .java dos robôs em $ROBOTS_JAVA_DIR:"
+          ls -l $ROBOTS_JAVA_DIR || echo "NÃO ACHOU"
+          find . -name '*.java'
 
       - name: Setup Java 11 (para Checkstyle e SpotBugs)
         uses: actions/setup-java@v4
@@ -24,8 +34,9 @@ jobs:
 
       - name: Rodar Checkstyle nos robôs
         run: |
+          mkdir -p battle_logs
           set +e
-          java -jar checkstyle.jar -c ./libs/google_checks.xml MonstrosDeBytes/robocode/robots/*.java
+          java -jar checkstyle.jar -c ./libs/google_checks.xml $ROBOTS_JAVA_DIR/*.java
           echo $? > battle_logs/checkstyle_status.txt
           set -e
 
@@ -37,19 +48,19 @@ jobs:
 
       - name: Compilar robôs para SpotBugs
         run: |
-          mkdir -p MonstrosDeBytes/robocode/robots/
-          javac MonstrosDeBytes/robocode/robots/*.java -d MonstrosDeBytes/robocode/robots/
+          mkdir -p $ROBOTS_CLASS_DIR
+          javac $ROBOTS_JAVA_DIR/*.java -d $ROBOTS_CLASS_DIR
 
       - name: Rodar SpotBugs nos robôs
         run: |
           set +e
-          spotbugs-4.8.3/bin/spotbugs -textUI -effort:min MonstrosDeBytes/robocode/robots/
+          spotbugs-4.8.3/bin/spotbugs -textUI -effort:min $ROBOTS_CLASS_DIR
           echo $? > battle_logs/spotbugs_status.txt
           set -e
 
       - name: Compilar robôs para a batalha do Robocode
         run: |
-          javac -cp libs/robocode.jar MonstrosDeBytes/robocode/robots/*.java -d MonstrosDeBytes/robocode/robots/
+          javac -cp libs/robocode.jar $ROBOTS_JAVA_DIR/*.java -d $ROBOTS_CLASS_DIR
           echo $? > battle_logs/robocode_build_status.txt
 
       - name: Rodar batalha entre seus robôs
