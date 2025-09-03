@@ -13,6 +13,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Listar arquivos dos robôs (debug)
+        run: |
+          echo "Robôs dentro de robocode/robots/github:"
+          find robocode/robots/github -type f -name "*.java"
+          ls -l robocode/robots/github
+
       - name: Setup Java 11 (para Checkstyle e SpotBugs)
         uses: actions/setup-java@v4
         with:
@@ -22,11 +28,11 @@ jobs:
       - name: Baixar Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
-      - name: Rodar Checkstyle
+      - name: Rodar Checkstyle na pasta correta
         run: |
           mkdir -p battle_logs
           set +e
-          java -jar checkstyle.jar -c libs/google_checks.xml *.java
+          java -jar checkstyle.jar -c libs/google_checks.xml robocode/robots/github/*.java
           echo $? > battle_logs/checkstyle_status.txt
           set -e
 
@@ -39,7 +45,7 @@ jobs:
       - name: Compilar robôs para SpotBugs
         run: |
           mkdir -p classes
-          javac *.java -d classes
+          javac robocode/robots/github/*.java -d classes
 
       - name: Rodar SpotBugs
         run: |
@@ -48,10 +54,10 @@ jobs:
           echo $? > battle_logs/spotbugs_status.txt
           set -e
 
-      - name: Compilar robôs para a batalha do Robocode
+      - name: Compilar robôs para Robocode
         run: |
-          mkdir -p robocode/robots/
-          javac -cp libs/robocode.jar *.java -d robocode/robots/
+          mkdir -p robocode/robots/github
+          javac -cp libs/robocode.jar robocode/robots/github/*.java -d robocode/robots/github
           echo $? > battle_logs/robocode_build_status.txt
 
       - name: Rodar batalha entre robôs
@@ -62,11 +68,7 @@ jobs:
         run: |
           echo "Arquivos em battle_logs/"
           ls -lh battle_logs/
+          echo "Conteúdo de report.html (se existir):"
           cat battle_logs/report.html || echo "report.html não existe"
 
-      - name: Upload battle logs (relatório incluído!)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: battle-logs
-          path: battle_logs/
+      -
