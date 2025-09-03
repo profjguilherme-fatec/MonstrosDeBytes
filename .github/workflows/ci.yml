@@ -1,4 +1,5 @@
 name: CI - Robocode, Checkstyle e SpotBugs
+
 on:
   push:
     branches: [ main ]
@@ -6,10 +7,10 @@ on:
     branches: [ main ]
 
 jobs:
-  qualidade_e_seguranca:
+  qualidade_e_batalha:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout do código
         uses: actions/checkout@v4
 
       - name: Setup Java 11 (para Checkstyle e SpotBugs)
@@ -18,94 +19,50 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Download Checkstyle
+      - name: Baixar Checkstyle
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
-      - name: Rodar Checkstyle
-        id: checkstyle
+      - name: Rodar Checkstyle nos robôs
         run: |
           set +e
-          java -jar checkstyle.jar -c libs/google_checks.xml src/
-          echo $? > checkstyle_status
+          java -jar checkstyle.jar -c ./libs/google_checks.xml MonstrosDeBytes/robocode/robots/*.java
+          echo $? > battle_logs/checkstyle_status.txt
           set -e
 
-      - name: Download SpotBugs
+      - name: Baixar SpotBugs
         run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
 
       - name: Extrair SpotBugs
         run: tar -xzf spotbugs.tgz
 
-      - name: Permissão para SpotBugs
-        run: chmod +x spotbugs-4.8.3/bin/spotbugs
-
-      - name: Rodar SpotBugs
-        id: spotbugs
+      - name: Compilar robôs para SpotBugs
         run: |
-          sset +e
-          spotbugs-4.8.3/bin/spotbugs -text -effort:max -high src/
-          echo $? > spotbugs_status
-          set -e
+          mkdir -p MonstrosDeBytes/robocode/robots/
+          javac MonstrosDeBytes/robocode/robots/*.java -d MonstrosDeBytes/robocode/robots/
 
-      # Upload dos status (sem extensão!) para o próximo job
-      - name: Upload status dos jobs para job de Robocode
-        uses: actions/upload-artifact@v4
-        with:
-          name: status-jobs
-          path: |
-            checkstyle_status
-            spotbugs_status
-
-  steps_robocode:
-    runs-on: ubuntu-latest
-    needs: qualidade_e_seguranca
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Baixar status dos jobs anteriores
-        uses: actions/download-artifact@v4
-        with:
-          name: status-jobs
-
-      - name: Setup Java 8 (para Robocode)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '8'
-
-      - name: Preparar estrutura dos robôs
-        run: |
-          rm -rf robocode/robots/github/
-          mkdir -p robocode/robots/github/
-          mkdir -p battle_logs/
-
-      - name: Compilar robôs na pasta do Robocode
-        id: robocode_build
+      - name: Rodar SpotBugs nos robôs
         run: |
           set +e
-          javac -cp libs/robocode.jar -d robocode/robots src/github/*.java || true
-          echo $? > robocode_build_status
+          spotbugs-4.8.3/bin/spotbugs -textUI -effort:min MonstrosDeBytes/robocode/robots/
+          echo $? > battle_logs/spotbugs_status.txt
           set -e
 
-      # Copia todos status sem extensão para battle_logs e renomeia conforme esperado no script
-      - name: Garantir status no battle_logs
+      - name: Compilar robôs para a batalha do Robocode
         run: |
-          cp checkstyle_status battle_logs/checkstyle_status.txt || true
-          cp spotbugs_status battle_logs/spotbugs_status.txt || true
-          cp robocode_build_status battle_logs/robocode_build_status.txt || true
+          javac -cp libs/robocode.jar MonstrosDeBytes/robocode/robots/*.java -d MonstrosDeBytes/robocode/robots/
+          echo $? > battle_logs/robocode_build_status.txt
 
-      - name: Rodar batalha entre robôs sample do Robocode
+      - name: Rodar batalha entre seus robôs
         run: |
           bash scripts/testar_batalha.sh
 
       - name: Listar conteúdo de battle_logs antes do upload
         run: |
-          echo "Arquivos em battle_logs/"
+          echo "Arquivos gerados em battle_logs:"
           ls -lh battle_logs/
-          echo "Conteúdo de report.html (se existir):"
           cat battle_logs/report.html || echo "report.html não existe"
 
-      - name: Upload battle logs (relatório incluído!)
+      - name: Upload dos logs e relatório
         if: always()
         uses: actions/upload-artifact@v4
         with:
