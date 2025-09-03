@@ -1,5 +1,4 @@
 name: CI - Robocode, Checkstyle e SpotBugs
-
 on:
   push:
     branches: [ main ]
@@ -23,7 +22,12 @@ jobs:
         run: wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar -O checkstyle.jar
 
       - name: Rodar Checkstyle
-        run: java -jar checkstyle.jar -c libs/google_checks.xml src/
+        id: checkstyle
+        run: |
+          set +e
+          java -jar checkstyle.jar -c libs/google_checks.xml src/
+          echo $? > checkstyle_status.txt
+          set -e
 
       - name: Download SpotBugs
         run: wget https://repo1.maven.org/maven2/com/github/spotbugs/spotbugs/4.8.3/spotbugs-4.8.3.tgz -O spotbugs.tgz
@@ -34,11 +38,22 @@ jobs:
       - name: Permissão para SpotBugs
         run: chmod +x spotbugs-4.8.3/bin/spotbugs
 
-      - name: Upload SpotBugs para job de Robocode
+      - name: Rodar SpotBugs
+        id: spotbugs
+        run: |
+          set +e
+          spotbugs-4.8.3/bin/spotbugs -textUI -effort:max -high src/
+          echo $? > spotbugs_status.txt
+          set -e
+
+      # Upload dos status para o próximo job (arquivos dos status de job)
+      - name: Upload status dos jobs para job de Robocode
         uses: actions/upload-artifact@v4
         with:
-          name: spotbugs
-          path: spotbugs-4.8.3/
+          name: status-jobs
+          path: |
+            checkstyle_status.txt
+            spotbugs_status.txt
 
   steps_robocode:
     runs-on: ubuntu-latest
@@ -47,35 +62,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Baixar status dos jobs anteriores
+        uses: actions/download-artifact@v4
+        with:
+          name: status-jobs
+
       - name: Setup Java 8 (para Robocode)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '8'
 
-      # A etapa de preparar robôs pode ser mantida, mesmo que não compilará para samples
       - name: Preparar estrutura dos robôs
         run: |
           rm -rf robocode/robots/github/
           mkdir -p robocode/robots/github/
           mkdir -p battle_logs/
 
-      # As etapas de compilação e listings continuam,
-      # mas serão indiferentes para os samples
       - name: Compilar robôs na pasta do Robocode
+        id: robocode_build
         run: |
-          javac -cp libs/robocode.jar -d robocode/robots src/github/*.java || echo "Nenhum robô personalizado a compilar"
+          set +e
+          javac -cp libs/robocode.jar -d robocode/robots src/github/*.java || true
+          echo $? > robocode_build_status.txt
+          set -e
 
-      - name: Conferir versões dos .class
-        run: |
-          for f in robocode/robots/github/*.class; do
-            echo -n "$f: "; javap -verbose "$f" | grep "major version"
-          done || echo "Sem arquivos .class personalizados"
-
-      - name: Listar robocode/robots/github para debug
-        run: ls -l robocode/robots/github || echo "Sem arquivos .class personalizados"
-
-      # Aqui o step principal foi clarificado
       - name: Rodar batalha entre robôs sample do Robocode
         run: |
           bash scripts/testar_batalha.sh
@@ -83,21 +94,26 @@ jobs:
       - name: Verificar arquivos e resultado da batalha
         run: |
           echo 'Arquivo .battle:'
-          cat battle_logs/sample_vs_sample.battle || cat battle_logs/simples.battle || echo "Arquivo .battle não existe"
+          cat battle_logs/sample_vs_sample.battle || echo "Arquivo .battle não existe"
           echo 'Partial resultado da batalha:'
-          head -30 battle_logs/sample_result.txt || head -30 battle_logs/resultado.txt || echo "Resultado da batalha não encontrado"
+          head -30 battle_logs/sample_result.txt || echo "Resultado da batalha não encontrado"
           echo 'Conteúdo completo do resultado.txt'
-          cat battle_logs/sample_result.txt || cat battle_logs/resultado.txt || echo "Sem resultado completo"
+          cat battle_logs/sample_result.txt || echo "Sem resultado completo"
 
-      - name: Upload battle logs (sempre)
+      # Upload dos status de compilação
+      - name: Upload status de compilação robocode (para report.html)
+        uses: actions/upload-artifact@v4
+        with:
+          name: robocode-build-status
+          path: robocode_build_status.txt
+
+      # Adiciona robocode_build_status.txt também à pasta scripts para o relatório poder ler todos na raiz
+      - name: Mover status de compilação para raiz (opcionalmente, se o script não encontrar)
+        run: cp robocode_build_status.txt ./ || true
+
+      - name: Upload battle logs (relatório incluído!)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: battle-logs
           path: battle_logs/
-
-      - name: Mensagem de sucesso
-        if: ${{ success() }}
-        run: |
-          echo 'CI finalizado com sucesso!'
-          echo 'Pipeline completa e aprovada.'

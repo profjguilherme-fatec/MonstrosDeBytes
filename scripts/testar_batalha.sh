@@ -1,9 +1,10 @@
 #!/bin/bash
 set -e
-# Garante a criação do diretório de log
+
+# Diretório para os logs da batalha
 mkdir -p battle_logs
 
-# Gera a batalha
+# Gera a batalha de exemplo
 cat > battle_logs/sample_vs_sample.battle <<EOF
 robocode.battleField.width=800
 robocode.battleField.height=600
@@ -24,13 +25,29 @@ grep -E "sample\.(Corners|Walls)" battle_logs/sample_result.txt || echo "(Nada e
 # ----------- GERAÇÃO DO RELATÓRIO HTML -----------
 REPORT_HTML="battle_logs/report.html"
 
-# Cabeçalho HTML
+function parse_status {
+  local code="$1"
+  [[ "$code" == "0" ]] && echo "Sucesso" || ([[ "$code" == "N/A" ]] && echo "Não executado" || echo "Falha (código $code)")
+}
+
+# Caminhos relativos para os arquivos de status (ajustados para rodar no CI com checkout padrão)
+CHECKSTYLE_STATUS=$(cat checkstyle_status.txt 2>/dev/null || echo "N/A")
+SPOTBUGS_STATUS=$(cat spotbugs_status.txt 2>/dev/null || echo "N/A")
+ROBOCODE_BUILD_STATUS=$(cat robocode_build_status.txt 2>/dev/null || echo "N/A")
+
+# Pega pontuações dos robôs (adapte conforme necessário)
+SCORE_CORNERS=$(grep "sample.Corners" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
+SCORE_WALLS=$(grep "sample.Walls" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
+[[ -z "$SCORE_CORNERS" ]] && SCORE_CORNERS="N/A"
+[[ -z "$SCORE_WALLS" ]] && SCORE_WALLS="N/A"
+
+# Início do HTML
 cat > "$REPORT_HTML" <<EOF
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Relatório da Batalha Robocode</title>
+  <title>Relatório Integrado do CI - Robocode</title>
   <style>
     body { font-family: Arial, sans-serif; margin:40px;}
     h1 { color: #19406D; }
@@ -41,38 +58,34 @@ cat > "$REPORT_HTML" <<EOF
   </style>
 </head>
 <body>
-  <h1>Relatório da Batalha Robocode</h1>
+  <h1>Relatório Integrado do Pipeline</h1>
+  <h2>Status dos Jobs de Qualidade</h2>
+  <table>
+    <tr><th>Tarefa</th><th>Status</th></tr>
+    <tr><td>Checkstyle</td><td>$(parse_status "$CHECKSTYLE_STATUS")</td></tr>
+    <tr><td>SpotBugs</td><td>$(parse_status "$SPOTBUGS_STATUS")</td></tr>
+    <tr><td>Compilação Robocode</td><td>$(parse_status "$ROBOCODE_BUILD_STATUS")</td></tr>
+  </table>
+  <hr>
+  <h2>Relatório da Batalha Robocode</h2>
   <b>Robôs:</b> sample.Corners vs sample.Walls<br>
   <b>Rounds:</b> 3<br><br>
-  <h2>Resumo dos Resultados</h2>
+  <h3>Resumo dos Resultados</h3>
   <table>
     <tr>
       <th>Robô</th>
       <th>Pontuação (estimada)</th>
-      <th>Comentários</th>
     </tr>
-EOF
-
-# Coleta pontuação dos logs (*adapte conforme o formato real dos seus logs; este é exemplo*)
-SCORE_CORNERS=$(grep "sample.Corners" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
-SCORE_WALLS=$(grep "sample.Walls" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
-
-[[ -z "$SCORE_CORNERS" ]] && SCORE_CORNERS="N/A"
-[[ -z "$SCORE_WALLS" ]] && SCORE_WALLS="N/A"
-
-cat >> "$REPORT_HTML" <<EOF
     <tr>
       <td>sample.Corners</td>
       <td>$SCORE_CORNERS</td>
-      <td></td>
     </tr>
     <tr>
       <td>sample.Walls</td>
       <td>$SCORE_WALLS</td>
-      <td></td>
     </tr>
   </table>
-  <h2>Principais eventos do log</h2>
+  <h3>Principais eventos do log</h3>
   <pre>
 EOF
 
@@ -82,10 +95,9 @@ grep -E "sample\.(Corners|Walls)" battle_logs/sample_result.txt | head -40 >> "$
 cat >> "$REPORT_HTML" <<EOF
   </pre>
   <hr>
-  <small>Relatório gerado automaticamente por testar_batalha.sh<br>
-  $(date)</small>
+  <small>Relatório do CI e da batalha gerado automaticamente em $(date).</small>
 </body>
 </html>
 EOF
 
-echo "Relatório HTML de batalha gerado em $REPORT_HTML"
+echo "Relatório HTML de pipeline e batalha gerado em $REPORT_HTML"
