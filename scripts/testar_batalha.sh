@@ -3,11 +3,6 @@ set +e
 
 mkdir -p battle_logs
 
-# --------------- CHECKSTYLE/STATUS (já feito pelo CI) ---------------
-
-# --------------- SPOTBUGS/STATUS (já feito pelo CI) ---------------
-
-# --------------- CRIAÇÃO DO ARQUIVO DE BATALHA ---------------
 cat > battle_logs/sample_vs_sample.battle <<EOF
 robocode.battleField.width=800
 robocode.battleField.height=600
@@ -15,17 +10,16 @@ robocode.battle.numRounds=3
 robocode.battle.gunCoolingRate=0.1
 robocode.battle.rules.inactivityTime=450
 robocode.battle.hideEnemyNames=false
-robocode.battle.robots=Corners,PrimeiroRobo
+robocode.battle.robots=github.Corners,github.PrimeiroRobo
 EOF
 
-echo "Rodando batalha entre seus robôs..."
-java -Xmx512M -cp libs/robocode.jar robocode.Robocode -battle battle_logs/sample_vs_sample.battle -nodisplay \
-    > battle_logs/sample_result.txt 2>&1 || true
+echo "Rodando batalha entre os robôs github.Corners e github.PrimeiroRobo..."
+java -Xmx512M -cp libs/robocode.jar robocode.Robocode -battle battle_logs/sample_vs_sample.battle -nodisplay > battle_logs/sample_result.txt 2>&1 || true
 
 echo "Resultados da batalha:"
-grep -E "Corners|PrimeiroRobo" battle_logs/sample_result.txt || echo "(Nada encontrado. Algo deu errado!)"
+grep -E "github.Corners|github.PrimeiroRobo" battle_logs/sample_result.txt || echo "(Nada encontrado.)"
 
-# --------------- GERAÇÃO DO RELATÓRIO HTML ---------------
+# Relatório HTML básico:
 REPORT_HTML="battle_logs/report.html"
 cat > "$REPORT_HTML" <<EOF
 <!DOCTYPE html>
@@ -38,7 +32,7 @@ cat > "$REPORT_HTML" <<EOF
   <h3>Log da batalha</h3>
   <pre>
 EOF
-grep -E "Corners|PrimeiroRobo" battle_logs/sample_result.txt | head -40 >> "$REPORT_HTML"
+grep -E "github.Corners|github.PrimeiroRobo" battle_logs/sample_result.txt | head -40 >> "$REPORT_HTML"
 cat >> "$REPORT_HTML" <<EOF
   </pre><hr>
   <small>Relatório do CI e da batalha gerado automaticamente em $(date).</small>
@@ -46,5 +40,5 @@ cat >> "$REPORT_HTML" <<EOF
 </html>
 EOF
 
-echo "Relatório HTML de pipeline e batalha gerado em $REPORT_HTML"
+echo "Relatório gerado em $REPORT_HTML"
 exit 0
