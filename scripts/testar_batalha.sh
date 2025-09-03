@@ -4,6 +4,14 @@ set -e
 # Diretório para os logs da batalha
 mkdir -p battle_logs
 
+# Garante que todos os status necessários estejam dentro de battle_logs e com extensão .txt
+for file in checkstyle_status spotbugs_status robocode_build_status; do
+    # Se o status existir na raiz, copia para battle_logs e renomeia para .txt
+    if [ -f "$file" ]; then
+        cp -f "$file" "battle_logs/${file}.txt"
+    fi
+done
+
 # Gera a batalha de exemplo
 cat > battle_logs/sample_vs_sample.battle <<EOF
 robocode.battleField.width=800
@@ -30,12 +38,12 @@ function parse_status {
   [[ "$code" == "0" ]] && echo "Sucesso" || ([[ "$code" == "N/A" ]] && echo "Não executado" || echo "Falha (código $code)")
 }
 
-# Busca arquivos de status sempre dentro de battle_logs
+# Busca arquivos de status (SEMPRE .txt) dentro de battle_logs
 CHECKSTYLE_STATUS=$(cat battle_logs/checkstyle_status.txt 2>/dev/null || echo "N/A")
 SPOTBUGS_STATUS=$(cat battle_logs/spotbugs_status.txt 2>/dev/null || echo "N/A")
 ROBOCODE_BUILD_STATUS=$(cat battle_logs/robocode_build_status.txt 2>/dev/null || echo "N/A")
 
-# Pega pontuações dos robôs (adapte conforme necessário)
+# Pega pontuações dos robôs
 SCORE_CORNERS=$(grep "sample.Corners" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
 SCORE_WALLS=$(grep "sample.Walls" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
 [[ -z "$SCORE_CORNERS" ]] && SCORE_CORNERS="N/A"
@@ -89,7 +97,6 @@ cat > "$REPORT_HTML" <<EOF
   <pre>
 EOF
 
-# Adiciona até 40 linhas relevantes do log
 grep -E "sample\.(Corners|Walls)" battle_logs/sample_result.txt | head -40 >> "$REPORT_HTML"
 
 cat >> "$REPORT_HTML" <<EOF

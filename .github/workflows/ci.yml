@@ -26,7 +26,7 @@ jobs:
         run: |
           set +e
           java -jar checkstyle.jar -c libs/google_checks.xml src/
-          echo $? > checkstyle_status.txt
+          echo $? > checkstyle_status
           set -e
 
       - name: Download SpotBugs
@@ -43,17 +43,17 @@ jobs:
         run: |
           set +e
           spotbugs-4.8.3/bin/spotbugs -textUI -effort:max -high src/
-          echo $? > spotbugs_status.txt
+          echo $? > spotbugs_status
           set -e
 
-      # Upload dos status para o próximo job
+      # Upload dos status (sem extensão!) para o próximo job
       - name: Upload status dos jobs para job de Robocode
         uses: actions/upload-artifact@v4
         with:
           name: status-jobs
           path: |
-            checkstyle_status.txt
-            spotbugs_status.txt
+            checkstyle_status
+            spotbugs_status
 
   steps_robocode:
     runs-on: ubuntu-latest
@@ -84,15 +84,15 @@ jobs:
         run: |
           set +e
           javac -cp libs/robocode.jar -d robocode/robots src/github/*.java || true
-          echo $? > robocode_build_status.txt
+          echo $? > robocode_build_status
           set -e
 
-      # Copia todos os status.txt para dentro do battle_logs para o script ler sem problemas
+      # Copia todos status sem extensão para battle_logs e renomeia conforme esperado no script
       - name: Garantir status no battle_logs
         run: |
-          cp checkstyle_status.txt battle_logs/ || true
-          cp spotbugs_status.txt battle_logs/ || true
-          cp robocode_build_status.txt battle_logs/ || true
+          cp checkstyle_status battle_logs/checkstyle_status.txt || true
+          cp spotbugs_status battle_logs/spotbugs_status.txt || true
+          cp robocode_build_status battle_logs/robocode_build_status.txt || true
 
       - name: Rodar batalha entre robôs sample do Robocode
         run: |
