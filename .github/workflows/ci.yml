@@ -46,7 +46,7 @@ jobs:
           echo $? > spotbugs_status.txt
           set -e
 
-      # Upload dos status para o próximo job (arquivos dos status de job)
+      # Upload dos status para o próximo job
       - name: Upload status dos jobs para job de Robocode
         uses: actions/upload-artifact@v4
         with:
@@ -87,29 +87,23 @@ jobs:
           echo $? > robocode_build_status.txt
           set -e
 
+      # Copia todos os status.txt para dentro do battle_logs para o script ler sem problemas
+      - name: Garantir status no battle_logs
+        run: |
+          cp checkstyle_status.txt battle_logs/ || true
+          cp spotbugs_status.txt battle_logs/ || true
+          cp robocode_build_status.txt battle_logs/ || true
+
       - name: Rodar batalha entre robôs sample do Robocode
         run: |
           bash scripts/testar_batalha.sh
 
-      - name: Verificar arquivos e resultado da batalha
+      - name: Listar conteúdo de battle_logs antes do upload
         run: |
-          echo 'Arquivo .battle:'
-          cat battle_logs/sample_vs_sample.battle || echo "Arquivo .battle não existe"
-          echo 'Partial resultado da batalha:'
-          head -30 battle_logs/sample_result.txt || echo "Resultado da batalha não encontrado"
-          echo 'Conteúdo completo do resultado.txt'
-          cat battle_logs/sample_result.txt || echo "Sem resultado completo"
-
-      # Upload dos status de compilação
-      - name: Upload status de compilação robocode (para report.html)
-        uses: actions/upload-artifact@v4
-        with:
-          name: robocode-build-status
-          path: robocode_build_status.txt
-
-      # Adiciona robocode_build_status.txt também à pasta scripts para o relatório poder ler todos na raiz
-      - name: Mover status de compilação para raiz (opcionalmente, se o script não encontrar)
-        run: cp robocode_build_status.txt ./ || true
+          echo "Arquivos em battle_logs/"
+          ls -lh battle_logs/
+          echo "Conteúdo de report.html (se existir):"
+          cat battle_logs/report.html || echo "report.html não existe"
 
       - name: Upload battle logs (relatório incluído!)
         if: always()

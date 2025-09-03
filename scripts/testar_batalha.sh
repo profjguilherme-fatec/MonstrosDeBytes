@@ -30,10 +30,10 @@ function parse_status {
   [[ "$code" == "0" ]] && echo "Sucesso" || ([[ "$code" == "N/A" ]] && echo "Não executado" || echo "Falha (código $code)")
 }
 
-# Caminhos relativos para os arquivos de status (ajustados para rodar no CI com checkout padrão)
-CHECKSTYLE_STATUS=$(cat checkstyle_status.txt 2>/dev/null || echo "N/A")
-SPOTBUGS_STATUS=$(cat spotbugs_status.txt 2>/dev/null || echo "N/A")
-ROBOCODE_BUILD_STATUS=$(cat robocode_build_status.txt 2>/dev/null || echo "N/A")
+# Busca arquivos de status sempre dentro de battle_logs
+CHECKSTYLE_STATUS=$(cat battle_logs/checkstyle_status.txt 2>/dev/null || echo "N/A")
+SPOTBUGS_STATUS=$(cat battle_logs/spotbugs_status.txt 2>/dev/null || echo "N/A")
+ROBOCODE_BUILD_STATUS=$(cat battle_logs/robocode_build_status.txt 2>/dev/null || echo "N/A")
 
 # Pega pontuações dos robôs (adapte conforme necessário)
 SCORE_CORNERS=$(grep "sample.Corners" battle_logs/sample_result.txt | grep "score" | tail -1 | grep -Eo "[0-9]+")
