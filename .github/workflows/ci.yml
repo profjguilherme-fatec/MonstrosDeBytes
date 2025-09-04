@@ -50,8 +50,8 @@ jobs:
       - name: Compilar robôs para SpotBugs
         run: |
           mkdir -p classes
-          javac $ROBOTS_JAVA_DIR/*.java -d classes
-
+          javac -cp libs/robocode.jar:$ROBOTS_JAVA_DIR $ROBOTS_JAVA_DIR/*.java -d classes
+          
       - name: Rodar SpotBugs
         run: |
           set +e
