@@ -1,4 +1,4 @@
-name: CI - Robocode, Checkstyle e SpotBugs erros
+name: CI - Robocode, Checkstyle e SpotBugs
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir -p classes
           javac -cp libs/robocode.jar:$ROBOTS_JAVA_DIR $ROBOTS_JAVA_DIR/*.java -d classes
-          
+
       - name: Rodar SpotBugs
         run: |
           set +e
