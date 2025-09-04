@@ -47,6 +47,9 @@ jobs:
       - name: Extrair SpotBugs
         run: tar -xzf spotbugs.tgz
 
+      - name: Dar permissão no SpotBugs
+        run: chmod +x spotbugs-4.8.3/bin/spotbugs
+
       - name: Compilar robôs para SpotBugs
         run: |
           mkdir -p classes
