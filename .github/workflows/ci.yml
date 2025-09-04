@@ -1,4 +1,4 @@
-name: CI - Robocode, Checkstyle e SpotBugs
+name: CI - Robocode, Checkstyle e SpotBugs com relatório
 
 on:
   push:
