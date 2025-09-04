@@ -58,7 +58,7 @@ jobs:
       - name: Rodar SpotBugs
         run: |
           set +e
-          spotbugs-4.8.3/bin/spotbugs -textUI -effort:min classes
+          spotbugs-4.8.3/bin/spotbugs -text -effort:min classes
           echo $? > battle_logs/spotbugs_status.txt
           set -e
 
