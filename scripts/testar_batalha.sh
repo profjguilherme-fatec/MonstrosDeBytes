@@ -2,7 +2,7 @@
 set +e
 
 mkdir -p battle_logs
-
+#Fazendo teste de commit
 # Monta a configuração da batalha
 cat > battle_logs/sample_vs_sample.battle <<EOF
 robocode.battleField.width=800
